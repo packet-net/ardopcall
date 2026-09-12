@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Ardopcall/Ardopcall.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Ardopcall.Tests/Ardopcall.Tests.csproj" />
+  </Folder>
+</Solution>

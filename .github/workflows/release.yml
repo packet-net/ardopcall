@@ -1,0 +1,67 @@
+name: release
+
+# Tag-triggered release. Push a tag like `v0.1.0` to build self-contained
+# single-file binaries for every supported platform and publish them as a
+# GitHub Release. The version stamped into the build is the tag minus its
+# leading `v`.
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag to build & release (e.g. v0.1.0)'
+        required: true
+
+permissions:
+  contents: write
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  release:
+    name: build + release
+    runs-on: [self-hosted, linux]
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Resolve tag
+        id: tag
+        run: |
+          TAG="${{ github.event.inputs.tag || github.ref_name }}"
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "version=${TAG#v}" >> "$GITHUB_OUTPUT"
+
+      - name: Build single-file binaries
+        run: |
+          set -euo pipefail
+          TAG="${{ steps.tag.outputs.tag }}"
+          VERSION="${{ steps.tag.outputs.version }}"
+          rm -rf dist && mkdir -p dist
+          for rid in linux-x64 linux-arm64 osx-arm64 win-x64; do
+            echo "::group::publish $rid"
+            dotnet publish src/Ardopcall/Ardopcall.csproj -c Release -r "$rid" --self-contained \
+              -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true \
+              -p:DebugType=none -p:DebugSymbols=false \
+              -p:Version="$VERSION" -p:InformationalVersion="$VERSION" \
+              -o "publish/$rid"
+            if [ "$rid" = "win-x64" ]; then
+              mv "publish/$rid/ardopcall.exe" "dist/ardopcall-$TAG-$rid.exe"
+            else
+              mv "publish/$rid/ardopcall" "dist/ardopcall-$TAG-$rid"
+            fi
+            echo "::endgroup::"
+          done
+          ls -la dist
+
+      - name: Create release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.tag.outputs.tag }}
+          name: ardopcall ${{ steps.tag.outputs.tag }}
+          generate_release_notes: true
+          # Tags with a prerelease label (e.g. v0.1.1-rc1) are marked
+          # pre-release so they don't show as the latest stable build.
+          prerelease: ${{ contains(steps.tag.outputs.tag, '-') }}
+          files: dist/*

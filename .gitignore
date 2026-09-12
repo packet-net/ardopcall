@@ -1,0 +1,23 @@
+# Build artifacts
+[Bb]in/
+[Oo]bj/
+[Oo]ut/
+[Pp]ublish/
+artifacts/
+*.user
+*.suo
+.vs/
+.vscode/launch.json
+
+# Test results & coverage
+TestResults/
+coverage/
+*.coverage
+*.coveragexml
+*.trx
+
+# Tooling caches
+.idea/
+*.swp
+.DS_Store
+.claude/

@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <AssemblyName>ardopcall</AssemblyName>
+    <RootNamespace>Ardopcall</RootNamespace>
+    <!-- Baseline version for local/dev builds; the release workflow
+         overrides this with -p:Version from the git tag. -->
+    <Version>0.1.0</Version>
+  </PropertyGroup>
+
+  <!-- No PackageReference, deliberately. ardopcall speaks the ardopcf TCP host
+       interface with nothing but System.Net.Sockets, so the same binary drives
+       our TNC and a real ardopcf and a disagreement between them is a
+       measurement rather than a guess. A reference to M0LTE.Ardop (or to any
+       Packet.* package) would quietly make one of the two the reference
+       implementation, which is the one thing this tool must not do. -->
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Ardopcall.Tests" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,28 @@
+<Project>
+  <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(MSBuildThisFileDirectory)../'))" />
+
+  <PropertyGroup>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+    <!-- Test-project-only relaxations, matching axcall's. These are naming and
+         style rules written for a public API surface: CA1707 would ban the
+         Underscored_Test_Names that make a failing test readable in a CI log,
+         and the rest fire on the literal arrays and discarded results that a
+         test is made of. None of them is a defect being hidden; nothing here
+         ships. -->
+    <NoWarn>$(NoWarn);CA1707;CA1711;CA1861;CA1806</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="xunit.v3" />
+    <PackageReference Include="xunit.runner.visualstudio" />
+    <PackageReference Include="FluentAssertions" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+    <Using Include="FluentAssertions" />
+  </ItemGroup>
+
+</Project>

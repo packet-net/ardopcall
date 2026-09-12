@@ -1,0 +1,35 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  build-test:
+    name: build + test
+    runs-on: [self-hosted, linux]
+    steps:
+      - uses: actions/checkout@v6
+
+      # Building the test project builds ardopcall itself through its project
+      # reference, so this is the whole tree.
+      - name: build
+        run: dotnet build tests/Ardopcall.Tests/Ardopcall.Tests.csproj --nologo -warnaserror
+
+      # Hermetic: the only network the suite touches is loopback, against an
+      # in-process fake TNC. No radio, no Docker, no TNC on the LAN.
+      - name: test
+        run: dotnet test tests/Ardopcall.Tests/Ardopcall.Tests.csproj --nologo --no-build
