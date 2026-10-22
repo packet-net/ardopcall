@@ -55,6 +55,11 @@ jobs:
           done
           ls -la dist
 
+      # Self-contained, so the runtime in each binary is the runner's SDK's, and a stale runner
+      # ships old security fixes. Fail the release instead.
+      - name: Check the bundled .NET runtime is the latest patch
+        run: python3 scripts/check-bundled-runtime.py dist/*
+
       - name: Create release
         uses: softprops/action-gh-release@v2
         with:
