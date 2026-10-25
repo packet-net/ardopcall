@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
-"""Fails unless every binary bundles the latest .NET 10 runtime patch.
+"""Fails if any binary bundles a .NET 10 runtime older than the latest patch.
 
 The binaries are self-contained single files, so each carries the runtime of whichever SDK built
 it, and an operating system update never patches it. A runner with a stale SDK would ship months
 of missed security fixes and nothing would notice. This reads the runtime version out of each
 binary and compares it with the latest 10.0 runtime Microsoft lists.
+A newer one passes: an SDK or workload can reach nuget.org a few days before the release index lists that patch
+(the WebAssembly workload did, 10.0.14 on 2026-10-25), and the point is to catch a stale runner, not one ahead of the index.
 
 Usage: scripts/check-bundled-runtime.py <binary>...
 """
@@ -28,6 +30,10 @@ def latest_runtime():
     sys.exit(f"no .NET {CHANNEL} channel in {INDEX}")
 
 
+def version_key(version):
+    return tuple(int(part) for part in version.split("."))
+
+
 def main(binaries):
     if not binaries:
         sys.exit(__doc__)
@@ -37,9 +43,13 @@ def main(binaries):
     for binary in map(Path, binaries):
         found = sorted({m.decode() for m in RUNTIME.findall(binary.read_bytes())})
         print(f"{binary.name} bundles {', '.join(found) or 'nothing recognisable'}")
-        if found != [want]:
+        if len(found) != 1:
             print(f"::error::{binary.name} bundles .NET runtime {', '.join(found) or 'unknown'}, "
-                  f"not {want}. Update the .NET 10 SDK on the runner that built it.")
+                  f"not one recognisable version. Check how it was built.")
+            bad = True
+        elif version_key(found[0]) < version_key(want):
+            print(f"::error::{binary.name} bundles .NET runtime {found[0]}, older than {want}. "
+                  "Update the .NET 10 SDK on the runner that built it.")
             bad = True
     return 1 if bad else 0
 
